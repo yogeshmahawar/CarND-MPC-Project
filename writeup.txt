@@ -1,0 +1,73 @@
+-----------------------------------------------------
+** The Model
+-----------------------------------------------------
+The Model consists of a State and Actuator.
+
+State-[x,y,psi,v,cte,e_psi]
+x,y - Map co-ordinates 
+psi - Orientation angle
+v - velocity
+cte - cross track error
+e_psi - orientation error
+
+Actuator-[delta,a]
+delta - steering value (-25,25)in degrees
+a - accelerator value (-1,1). Break and accleration is defined using this single actuator.
+
+ref_v - 40, a reference velocity is used to limit the vehicle within 40 mph.
+Lf - 2.67, this is the distance from the front to the Centre of Gravity of Car.
+
+the Next state is determined using the following equations,
+
+x' = x + v * cos(psi) *dt
+y' = y + v * sin(psi) *dt
+psi' = psi + (v/Lf) * delta *dt
+v' = v + a * dt
+cte = y - f(x), f(x): reference line.
+
+cte' = cte + v * sin(psi) * dt
+e_psi' = e_psi + (v/Lf) * delta * dt 
+
+
+-------------------------------------------------------
+**Timstep & Elasped Duration ( N , dt)
+-------------------------------------------------------
+N - number of Timesteps
+dt - elapse time between actuations
+T - duration over which the future predictions are made. 
+
+T = N * dt
+
+T should be as large as possible, whereas dt as small as possible.
+for this project,
+ 
+A combination of N-10, dt-0.1 works well.
+
+
+-------------------------------------------------------
+**Polynomial fitting & MPC preprocessing
+-------------------------------------------------------
+Reference trajectory is passed to the program as a polynomial.
+The 3rd order polynomial will fit trajectories for most of the roads including curves.
+
+*polyfit(x,y,order) - this method is used to receive the co-efficients for the polynomial of desired order.
+*polyeval(coeffs,x) - is used to evaluate y values for given x co-ordinates.
+
+
+polyeval() method returns a value which we call as 'cross track error' (cte).
+
+cost function: operator()(ADvector& fg, const ADvector& vars)
+this function is helpful in calculation of cte'. in this function 'fg' is where cost function and vehicle model constraints are defined.
+'vars' is where we store all variables including the state variables and the actuation variables.
+we also define the Upper & Lower Bound for the variables in 'vars'.
+
+
+
+-------------------------------------------------------
+**MPC with Latency
+-------------------------------------------------------
+the following line is added in code to implement latency,
+
+this_thread::sleep_for(chrono::milliseconds(100));
+
+this is the reason for the time lapse between actuations i.e. dt to be chosen as 0.1
